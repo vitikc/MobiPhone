@@ -1,5 +1,7 @@
 package me.vitikc.mobiphone.commands;
 
+import me.vitikc.mobiphone.MPMain;
+import me.vitikc.mobiphone.contacts.MPContactsManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -7,9 +9,12 @@ import org.bukkit.entity.Player;
 
 public class MPPhoneCommand implements CommandExecutor {
 
+    private MPContactsManager cm = MPMain.getInstance().getContactsManager();
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)){
+        //TODO: Console commands: phone help, phone change, phone pay
+        if (!(sender instanceof Player)){ //This plugin player based, so console can't use phone command's
             sender.sendMessage("Only player can perform this command!");
             return true;
         }
@@ -33,7 +38,9 @@ public class MPPhoneCommand implements CommandExecutor {
             switch (args[0].toLowerCase()){
                 case "contacts":
                     if(args[1].equalsIgnoreCase("list")){ //contacts list of player stored in phone
-
+                        String list = cm.getContacts(player.getUniqueId());
+                        player.sendMessage("List of your contacts: ");
+                        player.sendMessage(list);
                     }
                     break;
                 case "number": //number <player> - Show player's phone number
@@ -47,9 +54,15 @@ public class MPPhoneCommand implements CommandExecutor {
             switch (args[0].toLowerCase()){
                 case "contacts": //contacts get/remove
                     if(args[1].equalsIgnoreCase("get")){ //get <contact_name> shows contact number
-
+                        String number = cm.getNumber(player.getUniqueId(),args[2]);
+                        if (number == null || number.isEmpty()){
+                            player.sendMessage("Not found contact " + args[2]);
+                            return true;
+                        }
+                        player.sendMessage(args[2] + " : " + number);
                     } else if (args[1].equalsIgnoreCase("remove")){ //remove <contact_name> deletes contact
-
+                        cm.removeContact(player.getUniqueId(), args[2]);
+                        player.sendMessage("Contact " + args[2] + " has been removed");
                     }
                     break;
                 default:
@@ -71,5 +84,9 @@ public class MPPhoneCommand implements CommandExecutor {
             }
         }
         return true;
+    }
+
+    private void addContact(String name, String number){
+
     }
 }
