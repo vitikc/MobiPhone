@@ -1,0 +1,9 @@
+name: MobiPhone
+main: me.vitikc.mobiphone.MPMain
+author: Vitikc
+authors: [Vitikc, Naitora]
+version: 1.0a
+commands:
+  phone:
+    description: Main command
+    usage: /<command>
