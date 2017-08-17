@@ -54,13 +54,17 @@ public class MPPhoneCommand implements CommandExecutor {
             switch (args[0].toLowerCase()){
                 case "contacts": //contacts get/remove
                     if(args[1].equalsIgnoreCase("get")){ //get <contact_name> shows contact number
-                        String number = cm.getNumber(player.getUniqueId(),args[2]);
+                        String number = cm.getNumber(player.getUniqueId(),args[2].toLowerCase());
                         if (number == null || number.isEmpty()){
                             player.sendMessage("Not found contact " + args[2]);
                             return true;
                         }
                         player.sendMessage(args[2] + " : " + number);
                     } else if (args[1].equalsIgnoreCase("remove")){ //remove <contact_name> deletes contact
+                        if (!cm.isContainsContact(player.getUniqueId(), args[2].toLowerCase())){
+                            player.sendMessage("Contact " + args[2] + " not found");
+                            return true;
+                        }
                         cm.removeContact(player.getUniqueId(), args[2]);
                         player.sendMessage("Contact " + args[2] + " has been removed");
                     }
@@ -72,7 +76,15 @@ public class MPPhoneCommand implements CommandExecutor {
             switch (args[0].toLowerCase()){
                 case "contacts":
                     if (args[1].equalsIgnoreCase("add")){ //add <contact_name> <number> add's contact
-
+                        if (cm.isContainsContact(player.getUniqueId(), args[2].toLowerCase())){
+                            player.sendMessage("Already have contact " + args[2]);
+                            return true;
+                        }
+                        if (!cm.isValidNumber(args[3])){
+                            player.sendMessage(args[3] + " not valid for number");
+                            return true;
+                        }
+                        cm.addContact(player.getUniqueId(),args[2].toLowerCase(),args[3]);
                     }
                     break;
                 case "sms":
@@ -84,9 +96,5 @@ public class MPPhoneCommand implements CommandExecutor {
             }
         }
         return true;
-    }
-
-    private void addContact(String name, String number){
-
     }
 }

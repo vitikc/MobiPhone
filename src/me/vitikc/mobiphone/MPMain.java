@@ -18,6 +18,7 @@ public class MPMain extends JavaPlugin {
 
     public void onEnable(){
         instance = this;
+        contactsManager = new MPContactsManager();
         registerCommands();
         registerListeners();
     }
