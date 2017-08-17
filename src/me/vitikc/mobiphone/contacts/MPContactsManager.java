@@ -33,6 +33,9 @@ public class MPContactsManager {
     public String getContacts(UUID holder){
         StringBuilder sb = new StringBuilder();
         sb.append("[");
+        if (!contacts.isSet(holder.toString())){
+            return "No contacts found";
+        }
         ConfigurationSection section = contacts.getConfigurationSection(holder.toString());
         for(String s : section.getKeys(false)){
             sb.append(s).append(", ");
@@ -48,6 +51,15 @@ public class MPContactsManager {
         contacts.set(holder.toString() + "." + name, null);
         saveContacts();
     }
+
+    public boolean isContainsContact(UUID holder, String name){
+        return contacts.isSet(holder.toString() + "." + name);
+    }
+
+    public boolean isValidNumber(String number){
+        return number.matches("\\d{4,8}");
+    }
+
 
     private void saveContacts(){
         try {
