@@ -1,5 +1,6 @@
 package me.vitikc.mobiphone;
 
+import me.vitikc.mobiphone.calls.MPCallsManager;
 import me.vitikc.mobiphone.commands.MPPhoneCommand;
 import me.vitikc.mobiphone.contacts.MPContactsManager;
 import me.vitikc.mobiphone.listeners.MPChatListener;
@@ -14,6 +15,7 @@ public class MPMain extends JavaPlugin {
 
     private static MPMain instance;
 
+    private MPCallsManager callsManager;
     private MPContactsManager contactsManager;
     private MPMessagesManager messagesManager;
     private MPPhonesManager phonesManager;
@@ -21,6 +23,7 @@ public class MPMain extends JavaPlugin {
 
     public void onEnable(){
         instance = this;
+        callsManager = new MPCallsManager();
         contactsManager = new MPContactsManager();
         messagesManager = new MPMessagesManager();
         phonesManager = new MPPhonesManager();
@@ -43,6 +46,10 @@ public class MPMain extends JavaPlugin {
 
     private void registerCommands(){
         getServer().getPluginCommand("phone").setExecutor(new MPPhoneCommand());
+    }
+
+    public MPCallsManager getCallsManager() {
+        return callsManager;
     }
 
     public MPContactsManager getContactsManager() {

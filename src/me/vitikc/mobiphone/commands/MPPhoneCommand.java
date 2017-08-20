@@ -2,6 +2,8 @@ package me.vitikc.mobiphone.commands;
 
 import me.vitikc.mobiphone.MPMain;
 import me.vitikc.mobiphone.MPPhonesManager;
+import me.vitikc.mobiphone.calls.MPCall;
+import me.vitikc.mobiphone.calls.MPCallsManager;
 import me.vitikc.mobiphone.contacts.MPContactsManager;
 import me.vitikc.mobiphone.messages.MPMessagesManager;
 import org.bukkit.Bukkit;
@@ -12,9 +14,10 @@ import org.bukkit.entity.Player;
 
 public class MPPhoneCommand implements CommandExecutor {
 
-    private MPContactsManager cm = MPMain.getInstance().getContactsManager();
-    private MPMessagesManager mm = MPMain.getInstance().getMessagesManager();
-    private MPPhonesManager pm = MPMain.getInstance().getPhonesManager();
+    private MPContactsManager cm = MPMain.getInstance().getContactsManager(); //Contacts manager
+    private MPMessagesManager mm = MPMain.getInstance().getMessagesManager(); //Messages manager
+    private MPPhonesManager pm = MPMain.getInstance().getPhonesManager(); //Phones manager
+    private MPCallsManager ac = MPMain.getInstance().getCallsManager(); //Active calls
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -24,7 +27,7 @@ public class MPPhoneCommand implements CommandExecutor {
             return true;
         }
         Player player = (Player) sender;
-        if (args.length == 0){
+        if (args.length == 0){ //show help message
 
         } else if (args.length == 1){
             switch (args[0].toLowerCase()){
@@ -47,6 +50,9 @@ public class MPPhoneCommand implements CommandExecutor {
                         player.sendMessage("List of your contacts: ");
                         player.sendMessage(list);
                     }
+                    break;
+                case "call":
+
                     break;
                 case "number": //number <player> - Show player's phone number
                     break;
@@ -128,7 +134,7 @@ public class MPPhoneCommand implements CommandExecutor {
                 default:
                     break;
             }
-        } else if (args.length > 4){
+        } else if (args.length > 4){ //Starting from 4th, arguments transforms to sms text
             if (!args[0].equalsIgnoreCase("sms")){
                 return true;
             }
@@ -140,6 +146,37 @@ public class MPPhoneCommand implements CommandExecutor {
         return true;
     }
 
+    //Send's sms to number or contact
+    //Sms has limit of 100 characters
+    //Sms can be send only to online player
+    private void call(Player player, String s){
+        boolean isNumberCall = false;
+        if (cm.isValidNumber(s))
+            isNumberCall = true;
+        if (!isNumberCall) {
+            if (!cm.isContainsContactName(player.getUniqueId(), s)) {
+                player.sendMessage(s + " contact not found!");
+                return;
+            }
+        } else {
+            player.sendMessage(s + " number not found!");
+            return;
+        }
+        Player receiver;
+        if (isNumberCall){
+            receiver = Bukkit.getPlayer(pm.getPlayer(s));
+        } else {
+            receiver = Bukkit.getPlayer(pm.getPlayer(cm.getNumber(player.getUniqueId(),s)));
+        }
+        if (receiver == null || !receiver.isOnline()){
+            player.sendMessage(s + " phone is offline!");
+            return;
+        }
+        MPCall<String, String> call = new MPCall<>(player.getName(),null);
+        ac.getActiveCalls().add(call);
+        receiver.sendMessage("Incoming call!"); //TODO: From contact's or number
+        
+    }
     private void sendSms(Player player, String args[]){
         if (!pm.isRegistered(player.getName())){
             player.sendMessage("Register your number! /phone register <number>");
@@ -164,10 +201,8 @@ public class MPPhoneCommand implements CommandExecutor {
                 return;
             }
         } else {
-            if (!cm.isValidNumber(args[2])){
-                player.sendMessage(args[2] + " number not found!");
-                return;
-            }
+            player.sendMessage(args[2] + " number not found!");
+            return;
         }
         Player receiver;
         if (isCheckByNumber)
