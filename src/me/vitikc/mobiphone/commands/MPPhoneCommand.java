@@ -32,7 +32,7 @@ public class MPPhoneCommand implements CommandExecutor {
         } else if (args.length == 1){
             switch (args[0].toLowerCase()){
                 case "end": //end current call
-
+                    endCall(player);
                     break;
                 case "reject": //reject's incoming call
                     rejectCall(player);
@@ -223,6 +223,7 @@ public class MPPhoneCommand implements CommandExecutor {
         callsManager.removeIncoming(receiverNumber);
         MPCall<String, String> call = new MPCall<>(playerNumber,receiverNumber);
         callsManager.getActiveCalls().add(call);
+        Bukkit.getPlayer(pm.getPlayer(playerNumber)).sendMessage(receiverNumber + " accepted call");
     }
 
     private void endCall(Player p){

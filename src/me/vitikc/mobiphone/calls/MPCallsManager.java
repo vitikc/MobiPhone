@@ -114,9 +114,9 @@ public class MPCallsManager {
             @Override
             public void run() {
                 if (hasIncoming(toRemove)){
-                    removeIncoming(toRemove);
-                    String caller = MPMain.getInstance().getPhonesManager().getPlayer(getCaller(toRemove));
+                    String caller = MPMain.getInstance().getPhonesManager().getPlayer(getIncomingFrom(toRemove));
                     Bukkit.getPlayer(caller).sendMessage(toRemove + " not responded too long");
+                    removeIncoming(toRemove);
                 }
             }
         }.runTaskLater(MPMain.getInstance(),30*20l).getTaskId();
