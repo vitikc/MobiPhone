@@ -1,5 +1,9 @@
 package me.vitikc.mobiphone.calls;
 
+import me.vitikc.mobiphone.MPMain;
+import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -94,15 +98,27 @@ public class MPCallsManager {
     }
 
     public void remove(String s){
-        Iterator<MPCall<String, String>> iterator = activeCalls.iterator();
-        while (iterator.hasNext()){
-            MPCall<String,String> call = iterator.next();
-            if (call.getKey().equalsIgnoreCase(s)||call.getValue().equalsIgnoreCase(s)) {
-                iterator.remove();
-                return;
+        MPCall<String, String> toRemove = null;
+        for (MPCall<String, String> call : activeCalls){
+            if (call.getKey().equalsIgnoreCase(s)||
+                    call.getValue().equalsIgnoreCase(s)){
+                toRemove = call;
             }
         }
-
+        if (toRemove != null)
+            activeCalls.remove(toRemove);
     }
 
+    public void waitToRemove(final String toRemove){
+        int id = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (hasIncoming(toRemove)){
+                    removeIncoming(toRemove);
+                    String caller = MPMain.getInstance().getPhonesManager().getPlayer(getCaller(toRemove));
+                    Bukkit.getPlayer(caller).sendMessage(toRemove + " not responded too long");
+                }
+            }
+        }.runTaskLater(MPMain.getInstance(),30*20l).getTaskId();
+    }
 }

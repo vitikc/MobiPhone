@@ -31,6 +31,9 @@ public class MPPhoneCommand implements CommandExecutor {
 
         } else if (args.length == 1){
             switch (args[0].toLowerCase()){
+                case "end": //end current call
+
+                    break;
                 case "reject": //reject's incoming call
                     rejectCall(player);
                     break;
@@ -160,11 +163,14 @@ public class MPPhoneCommand implements CommandExecutor {
                 return;
             }
         } else {
-            player.sendMessage(s + " number not found!");
-            return;
+            if (!cm.isValidNumber(s)){
+                player.sendMessage(s + " number not found!");
+                return;
+            }
         }
         Player receiver;
         String receiverNumber;
+        String playerNumber = pm.getNumber(player.getName());
         if (isNumberCall){
             receiverNumber = s;
             receiver = Bukkit.getPlayer(pm.getPlayer(receiverNumber));
@@ -176,6 +182,11 @@ public class MPPhoneCommand implements CommandExecutor {
             player.sendMessage(s + " phone is offline!");
             return;
         }
+        if (callsManager.hasIncoming(receiverNumber)||
+                callsManager.getCaller(receiverNumber).equalsIgnoreCase(playerNumber)){
+            player.sendMessage("Line is busy!");
+            return;
+        }
         if (callsManager.contains(player.getName())){
             player.sendMessage("You already talking");
             return;
@@ -184,10 +195,10 @@ public class MPPhoneCommand implements CommandExecutor {
             player.sendMessage("Target already talking");
             return;
         }
-        String playerNumber = pm.getNumber(player.getName());
         MPCall<String, String> call = new MPCall<>(playerNumber,receiverNumber);
         callsManager.getIncomingCalls().add(call);
-        receiver.sendMessage("Incoming call!"); //TODO: From contact's or number
+        callsManager.waitToRemove(receiverNumber);
+        receiver.sendMessage("Incoming call!"); //TODO: From contact or number
     }
 
     private void rejectCall(Player receiver){
@@ -212,6 +223,25 @@ public class MPPhoneCommand implements CommandExecutor {
         callsManager.removeIncoming(receiverNumber);
         MPCall<String, String> call = new MPCall<>(playerNumber,receiverNumber);
         callsManager.getActiveCalls().add(call);
+    }
+
+    private void endCall(Player p){
+        String playerNumber = pm.getNumber(p.getName());
+        if (!callsManager.contains(playerNumber)){
+            p.sendMessage("You don't talking at this moment");
+            return;
+        }
+        String receiverNumber = "";
+        if (callsManager.containsKey(playerNumber)){
+            receiverNumber = callsManager.getReceiver(playerNumber);
+        } else if (callsManager.containsValue(playerNumber)){
+            receiverNumber = callsManager.getCaller(playerNumber);
+        }
+        callsManager.remove(playerNumber);
+        Player receiver = Bukkit.getPlayer(pm.getPlayer(receiverNumber));
+        String endCallMsg = "Call was ended";
+        p.sendMessage(endCallMsg);
+        receiver.sendMessage(endCallMsg);
     }
 
     //Send's sms to number or contact
@@ -241,8 +271,10 @@ public class MPPhoneCommand implements CommandExecutor {
                 return;
             }
         } else {
-            player.sendMessage(args[2] + " number not found!");
-            return;
+            if (!cm.isValidNumber(args[2])){
+                player.sendMessage(args[2] + " number not found!");
+                return;
+            }
         }
         Player receiver;
         if (isCheckByNumber)
