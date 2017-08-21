@@ -17,7 +17,7 @@ public class MPPhoneCommand implements CommandExecutor {
     private MPContactsManager cm = MPMain.getInstance().getContactsManager(); //Contacts manager
     private MPMessagesManager mm = MPMain.getInstance().getMessagesManager(); //Messages manager
     private MPPhonesManager pm = MPMain.getInstance().getPhonesManager(); //Phones manager
-    private MPCallsManager ac = MPMain.getInstance().getCallsManager(); //Active calls
+    private MPCallsManager callsManager = MPMain.getInstance().getCallsManager(); //Active calls
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -32,12 +32,15 @@ public class MPPhoneCommand implements CommandExecutor {
         } else if (args.length == 1){
             switch (args[0].toLowerCase()){
                 case "reject": //reject's incoming call
+                    rejectCall(player);
                     break;
                 case "reply": //replying to incoming call
+                    replyCall(player);
                     break;
                 case "help": //show's help message
                     break;
                 case "number": //show's player's number
+                    player.sendMessage("My number is " + pm.getNumber(player.getName()));
                     break;
                 default:
                     break;
@@ -52,7 +55,7 @@ public class MPPhoneCommand implements CommandExecutor {
                     }
                     break;
                 case "call":
-
+                    call(player, args[1]);
                     break;
                 case "number": //number <player> - Show player's phone number
                     break;
@@ -146,9 +149,7 @@ public class MPPhoneCommand implements CommandExecutor {
         return true;
     }
 
-    //Send's sms to number or contact
-    //Sms has limit of 100 characters
-    //Sms can be send only to online player
+    //Performs call to contact or number
     private void call(Player player, String s){
         boolean isNumberCall = false;
         if (cm.isValidNumber(s))
@@ -163,20 +164,59 @@ public class MPPhoneCommand implements CommandExecutor {
             return;
         }
         Player receiver;
+        String receiverNumber;
         if (isNumberCall){
-            receiver = Bukkit.getPlayer(pm.getPlayer(s));
+            receiverNumber = s;
+            receiver = Bukkit.getPlayer(pm.getPlayer(receiverNumber));
         } else {
-            receiver = Bukkit.getPlayer(pm.getPlayer(cm.getNumber(player.getUniqueId(),s)));
+            receiverNumber = cm.getNumber(player.getUniqueId(),s);
+            receiver = Bukkit.getPlayer(pm.getPlayer(receiverNumber));
         }
         if (receiver == null || !receiver.isOnline()){
             player.sendMessage(s + " phone is offline!");
             return;
         }
-        MPCall<String, String> call = new MPCall<>(player.getName(),null);
-        ac.getActiveCalls().add(call);
+        if (callsManager.contains(player.getName())){
+            player.sendMessage("You already talking");
+            return;
+        }
+        if (callsManager.contains(receiver.getName())){
+            player.sendMessage("Target already talking");
+            return;
+        }
+        String playerNumber = pm.getNumber(player.getName());
+        MPCall<String, String> call = new MPCall<>(playerNumber,receiverNumber);
+        callsManager.getIncomingCalls().add(call);
         receiver.sendMessage("Incoming call!"); //TODO: From contact's or number
-        
     }
+
+    private void rejectCall(Player receiver){
+        String receiverNumber = pm.getNumber(receiver.getName());
+        if (!callsManager.hasIncoming(receiverNumber)){
+            receiver.sendMessage("You don't have incoming calls!");
+            return;
+        }
+        String playerNumber = callsManager.getIncomingFrom(receiverNumber);
+        callsManager.removeIncoming(receiverNumber);
+        Player player = Bukkit.getPlayer(pm.getPlayer(playerNumber));
+        player.sendMessage(receiverNumber + " rejected call!");
+    }
+
+    private void replyCall(Player receiver){
+        String receiverNumber = pm.getNumber(receiver.getName());
+        if (!callsManager.hasIncoming(receiverNumber)){
+            receiver.sendMessage("You don't have incoming calls!");
+            return;
+        }
+        String playerNumber = callsManager.getIncomingFrom(receiverNumber);
+        callsManager.removeIncoming(receiverNumber);
+        MPCall<String, String> call = new MPCall<>(playerNumber,receiverNumber);
+        callsManager.getActiveCalls().add(call);
+    }
+
+    //Send's sms to number or contact
+    //Sms has limit of 100 characters
+    //Sms can be send only to online player
     private void sendSms(Player player, String args[]){
         if (!pm.isRegistered(player.getName())){
             player.sendMessage("Register your number! /phone register <number>");
